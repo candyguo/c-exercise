@@ -1,0 +1,37 @@
+#include <iostream>
+#include <vector>
+#include <initializer_list>
+using namespace std;
+
+class Salary
+{
+public:
+    Salary(initializer_list<int> s)
+    {
+        for(int i:s)
+            m_vecSalary.push_back(i);
+            
+    }
+    int getTotal()
+    {
+        int total=0;
+        for(int i:m_vecSalary)
+            total+=i;
+        return total;
+    }
+    void addSalary(initializer_list<int>s)
+    {
+        for(int i:s)
+            m_vecSalary.push_back(i);
+    }
+private:
+    vector<int> m_vecSalary;
+};
+int main()
+{
+    Salary chen{100,90,10};
+    cout<<chen.getTotal()<<endl;
+    chen.addSalary({50});
+    cout<<chen.getTotal();
+}
+
