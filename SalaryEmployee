@@ -1,0 +1,273 @@
+//
+//  main.cpp
+//
+//  Created by 郭成成 on 2016/11/20.
+//  Copyright © 2016年 郭成成. All rights reserved.
+//
+
+#include <iostream>
+#include <ctime>
+#include "math.h"
+#include <string>   // string类型所在的头文件
+#include <cstring>
+#include <vector>
+#include <fstream>
+#include <climits>
+
+const int Max=10000;
+using namespace std;
+
+enum Emplevel
+{
+    enumOfficer=1,
+    enumStaff=2,
+};
+
+class Employee
+{
+protected:
+    string m_strName;
+    int m_nYear;
+    Emplevel m_nLevel;
+public:
+    Employee(string strName,int nYear):m_strName(strName),m_nYear(nYear)
+    {}
+    string GetName()
+    {
+        return m_strName;
+    }
+    int GetYear()
+    {
+        return m_nYear;
+    }
+    Emplevel GetLevel()
+    {
+        return m_nLevel;
+    }
+    virtual int GetSalary()=0;
+protected:
+    int GetWorkTime()
+    {
+        time_t t=time(0);
+        struct tm*now=localtime(&t);
+        return now->tm_year+1900-m_nYear+1;
+    }
+    
+};
+
+class Officer:public Employee
+{
+public:
+    Officer(string strName,int nYear):Employee(strName,nYear)
+    {
+        m_nLevel=enumOfficer;
+    }
+    virtual int GetSalary()
+    {
+        return GetWorkTime()*5000;
+    }
+};
+
+class Staff:public Employee
+{
+public:
+    Staff(string strName,int nYear):Employee(strName,nYear)
+    {
+        m_nLevel=enumStaff;
+    }
+    virtual int GetSalary()
+    {
+        return 1000*GetWorkTime();
+    }
+};
+
+
+
+class SalarySys
+{
+public:
+    static SalarySys* GetInstance()
+    {
+        if(m_instance==nullptr)
+        {
+            m_instance=new SalarySys();
+        }
+        return m_instance;
+    }
+private:
+    const string m_strFileName;
+    Employee *m_arrEmp[Max];
+    int m_nCount;
+    static SalarySys* m_instance;
+public:
+    int read()
+    {
+        string strName;
+        int nYear;
+        int nLevel;
+        int i=0;
+        ifstream in(m_strFileName);
+        if(in.is_open())
+        {
+            while (true)
+            {
+                in>>strName>>nLevel>>nYear;
+                if(!in)
+                    break;
+                if(nLevel==enumStaff)
+                {
+                    m_arrEmp[i]=new Staff(strName,nYear);
+                    ++i;
+                }
+                else if (nLevel==enumOfficer)
+                {
+                    m_arrEmp[i]=new Officer(strName,nYear);
+                    ++i;
+                }
+                if(i>Max)
+                    break;
+                
+            }
+            in.close();
+        }
+        cout<<"已读取"<<i<<"个员工数据"<<endl;
+        m_nCount=i;
+        return i;
+    }
+    
+    void Write()
+    {
+        ofstream out(m_strFileName);
+        if(out.is_open())
+        {
+            for(int i=0;i<m_nCount;i++)
+            {
+                Employee *p=m_arrEmp[i];
+                out<<p->GetName()<<"\t"<<
+                p->GetLevel()<<"\t"<<p->GetYear()<<endl;
+            }
+            out.close();
+        }
+    }
+    
+    int Input()
+    {
+        cout<<"请输入员工信息（名字 级别 入职年份）";
+        cout<<"\n 输入-1 表示结束";
+        int i=m_nCount;
+        for(;i<Max;++i)
+        {
+            cout<<"请输入"<<i<<"号员工的信息\n";
+            string strName;
+            int nYear;
+            int nLevel;
+            cin>>strName>>nYear>>nLevel;
+            if(!cin)
+            {
+                cout<<"输入错误，重新输入"<<endl;
+                cin.clear();
+                cin.sync();
+                --i;
+                continue;
+            }
+            else{
+                if(strName=="-1")//i增加之后才退出
+                    break;
+                if(nLevel==enumOfficer)
+                {
+                    m_arrEmp[i]=new Officer(strName,nYear);
+                }
+                else if (nLevel==enumStaff)
+                {
+                    m_arrEmp[i]=new Staff(strName,nYear);
+                }
+                else{
+                    cout<<"错误的员工输入";
+                    --i;
+                    cin.clear();
+                    cin.sync();
+                    continue;
+                }
+            }
+        }
+        m_nCount=i;
+        return m_nCount;
+    }
+    
+    Employee *GetMax()
+    {
+        Employee *p=nullptr;
+        int nMax=INT_MIN;
+        for(int i=0;i<m_nCount;i++)
+        {
+            if(m_arrEmp[i]->GetSalary()>nMax)
+            {
+                nMax=m_arrEmp[i]->GetSalary();
+                p=m_arrEmp[i];
+            }
+        }
+        return p;
+    }
+    
+    void find()
+    {
+        while (true) {
+            string strName="";
+            cout<<"请输入要查询的员工姓名\t -1表示结束"<<endl;
+            cin>>strName;
+            if(!cin)
+            {
+                cout<<"输入有误，继续输入"<<endl;
+                cin.clear();
+                cin.sync();
+                continue;
+            }
+            else if("-1"==strName)
+            {
+                cout<<"查询完毕"<<endl;
+                break;
+            }
+            bool isfind=false;
+            for(int i=0;i<m_nCount;i++)
+            {
+                if(m_arrEmp[i]->GetName()==strName)
+                {
+                    cout<<"员工姓名:"<<m_arrEmp[i]->GetName()<<endl;
+                    cout<<"员工工资:"<<m_arrEmp[i]->GetSalary()<<endl;
+                    isfind=true;
+                    break;
+                }
+            }
+            if(isfind==false)
+            {
+                cout<<"无法找到名字为"<<strName<<endl;
+                cout<<"请核对，重新输入"<<endl;
+            }
+        }
+    }
+private:
+    SalarySys():m_nCount(0),m_strFileName("SalaryData.txt")
+    {
+        for(long i=0;i<Max;i++)
+        {
+            m_arrEmp[i]=nullptr;
+            read();
+        }
+    }
+};
+
+
+int main()
+{
+    SalarySys *p=SalarySys::GetInstance();
+    p->Input();
+    Employee *em=p->GetMax();
+    if(em!=nullptr)
+    {
+        cout<<"工资最高的员工是： ";
+        cout<<em->GetName();
+    }
+    p->find();
+    return 0;
+}
+
